@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 # Utilities
 from datetime import datetime
 # Create your views here.
@@ -34,6 +35,7 @@ posts = [
 ]
 
 
+@login_required
 def list_posts(request):
     context = {
         'posts': posts
