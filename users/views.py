@@ -1,10 +1,9 @@
 from django.shortcuts import render, redirect
-from django.db.utils import IntegrityError
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 
-from .models import Profile
+from .forms import ProfileForm, SignUpForm
+ 
 # Create your views here.
 
 
@@ -28,32 +27,44 @@ def login_view(request):
 def signup_view(request):
     context = {}
     if request.method == 'POST':
-        username = request.POST.get('username', None)
-        password = request.POST.get('password', None)
-        password_conf = request.POST.get('password_conf', None)
-        first_name = request.POST.get('first_name', None)
-        last_name = request.POST.get('last_name', None)
-        email = request.POST.get('email', None)
-
-        if password != password_conf:
-            context['error'] = 'Password confirmation does not match'
-
-        try:
-            user = User.objects.create_user(username=username, password=password)
-            user.first_name = first_name
-            user.last_name = last_name
-            user.email = email
-            user.save()
-            Profile.objects.create(user=user)
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            form.save()
             return redirect('login')
-        except IntegrityError:
-            context['error'] = 'Username is already in use'
+    else:
+        form = SignUpForm()
+    
+    context = {
+        'form': form
+    }
 
     return render(request, 'users/signup.html', context)
 
-
+@login_required
 def update_profile_view(request):
-    return render(request, 'users/update_profile.html')
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES)
+        if form.is_valid():
+            data = form.cleaned_data
+            
+            profile.website = data['website']
+            profile.biography = data['biography']
+            profile.phone_number = data['phone_number']
+            profile.picture = data['picture']
+            profile.save()
+
+            return redirect('update_profile')
+    else:
+        form = ProfileForm()
+
+    context ={
+        'profile': profile,
+        'user': request.user,
+        'form': form
+    }
+    return render(request, 'users/update_profile.html', context)
 
 
 @login_required

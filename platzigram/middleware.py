@@ -13,13 +13,14 @@ class ProfileCompletionMiddleware:
 
     def __call__(self, request):
         if not request.user.is_anonymous:
-            profile = request.user.profile
-
-            if not profile.picture or not profile.biography:
-                if request.path not in [reverse('update_profile'), reverse('logout')]:
-                    return redirect('update_profile')
-
-
+            try:
+                profile = request.user.profile
+                if not profile.picture or not profile.biography:
+                    if request.path not in [reverse('update_profile'), reverse('logout')]:
+                        return redirect('update_profile')
+            except Exception as e:
+                pass
+                
         response = self.get_response(request)
         return response
 
