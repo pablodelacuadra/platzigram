@@ -1,8 +1,6 @@
-from django.shortcuts import render, redirect
 from django.urls import reverse, reverse_lazy
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import User
 from django.views.generic import DetailView, FormView, UpdateView
 
@@ -13,23 +11,14 @@ from .forms import SignUpForm
 # Create your views here.
 
 
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username', None)
-        password = request.POST.get('password', None)
-
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            return redirect('posts:feed')
-        else:
-            context = {
-                'error': 'Invalid username and password'
-            }
-            return render(request, 'users/login.html', context)
-    return render(request, 'users/login.html')
+class LoginView(auth_views.LoginView):
+    template_name = 'users/login.html'
+    redirect_authenticated_user = True
 
 
+class LogoutView(LoginRequiredMixin, auth_views.LogoutView):
+    template_name = 'users/logout_not_exists.html'
+    
 class SignUpView(FormView):
     """Users sign up view."""
 
@@ -67,7 +56,3 @@ class UserDetailView(LoginRequiredMixin, DetailView):
         context['posts'] = Post.objects.filter(profile=user.profile).order_by('-created')
         return context
     
-@login_required
-def logout_view(request):
-    logout(request)
-    return redirect('login')
